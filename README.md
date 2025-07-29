@@ -1,0 +1,1 @@
+The initial phase of the complex modular deployment involves preparing an AWS account for ongoing deployments.
