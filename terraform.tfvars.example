@@ -1,2 +1,4 @@
 # Example terraform.tfvars file
 # Copy to terraform.tfvars and customize values
+
+aws_region = "eu-central-1"
