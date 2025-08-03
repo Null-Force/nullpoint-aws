@@ -40,6 +40,19 @@ jobs:
           else
             echo "AWS CLI already installed: $(aws --version)"
           fi
+
+      - name: Configure AWS credentials
+        env:      
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION || env.AWS_DEFAULT_REGION }}
+        run: |
+          echo "AWS credentials configured"
+          # Validate that AWS credentials are set
+          if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+            echo "ERROR: AWS_ACCESS_KEY_ID not set"
+            exit 1
+          fi
           
       - name: Verify tools
         run: |
