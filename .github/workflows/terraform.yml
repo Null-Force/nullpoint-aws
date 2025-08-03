@@ -9,6 +9,7 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    environment: main
     
     steps:
       - name: Checkout
@@ -39,13 +40,6 @@ jobs:
           else
             echo "AWS CLI already installed: $(aws --version)"
           fi
-          
-      - name: Configure AWS (GitHub Actions only)
-        if: ${{ env.ACT != 'true' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: eu-central-1
           
       - name: Verify tools
         run: |
