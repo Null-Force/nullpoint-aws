@@ -29,17 +29,28 @@ get_admin_users() {
 select_admin_user() {
     local action="$1"  # "activate" or "deactivate"
     
-    echo "🔍 Finding admin users..."
-    local admin_users_array=($(get_admin_users))
+    # Redirect info messages to stderr to keep stdout clean
+    echo "🔍 Finding admin users..." >&2
     
-    if [[ ${#admin_users_array[@]} -eq 0 ]]; then
-        echo "❌ No admin users found with required tags"
-        echo "💡 Use the admin user creation script first"
+    # Get admin users and check if function succeeded
+    local admin_users_list=$(get_admin_users)
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Error accessing AWS or no admin users found" >&2
+        echo "💡 Use the admin user creation script first" >&2
         return 1
     fi
     
-    echo ""
-    echo "📋 Available admin users:"
+    # Convert to array
+    local admin_users_array=($admin_users_list)
+    
+    if [[ ${#admin_users_array[@]} -eq 0 ]]; then
+        echo "❌ No admin users found with required tags" >&2
+        echo "💡 Use the admin user creation script first" >&2
+        return 1
+    fi
+    
+    echo "" >&2
+    echo "📋 Available admin users:" >&2
     for i in "${!admin_users_array[@]}"; do
         local user="${admin_users_array[$i]}"
         local status="Unknown"
@@ -52,19 +63,19 @@ select_admin_user() {
             status="🔴 Inactive"
         fi
         
-        echo "   $((i+1))) $user ($status)"
+        echo "   $((i+1))) $user ($status)" >&2
     done
     
-    echo ""
+    echo "" >&2
     read -p "Select user to $action [1-${#admin_users_array[@]}]: " CHOICE
     
     # Validate choice
     if [[ ! "$CHOICE" =~ ^[0-9]+$ ]] || [[ "$CHOICE" -lt 1 ]] || [[ "$CHOICE" -gt ${#admin_users_array[@]} ]]; then
-        echo "❌ Invalid choice"
+        echo "❌ Invalid choice" >&2
         return 1
     fi
     
-    # Return selected username
+    # Return selected username via stdout
     echo "${admin_users_array[$((CHOICE-1))]}"
     return 0
 }
@@ -181,7 +192,7 @@ read -p "Enter choice [1-4]: " CHOICE
 case $CHOICE in
     1)
         echo "🔍 Searching for admin IAM users..."
-        local admin_users_array=($(get_admin_users))
+        admin_users_array=($(get_admin_users))
         
         if [[ $? -ne 0 ]] || [[ ${#admin_users_array[@]} -eq 0 ]]; then
             echo "❌ No admin users found or error accessing AWS"
@@ -190,8 +201,8 @@ case $CHOICE in
             echo ""
             echo "📋 Found admin users:"
             for user in "${admin_users_array[@]}"; do
-                local key_status=$(aws iam list-access-keys --user-name "$user" --query 'AccessKeyMetadata[0].Status' --output text 2>/dev/null)
-                local status="Unknown"
+                key_status=$(aws iam list-access-keys --user-name "$user" --query 'AccessKeyMetadata[0].Status' --output text 2>/dev/null)
+                status="Unknown"
                 if [[ "$key_status" == "Active" ]]; then
                     status="🟢 Active"
                 elif [[ "$key_status" == "Inactive" ]]; then

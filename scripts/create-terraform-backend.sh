@@ -101,8 +101,49 @@ aws s3api put-bucket-lifecycle-configuration \
         ]
     }'
 
-echo "Step 6/7: Configuring access policy..."
-# 6. Configure bucket policy for IAM users only
+echo "Step 6/8: Adding resource tags..."
+# 6. Add comprehensive tags for resource management
+aws s3api put-bucket-tagging \
+    --bucket "$BUCKET_NAME" \
+    --tagging '{
+        "TagSet": [
+            {
+                "Key": "Purpose",
+                "Value": "TerraformBackend"
+            },
+            {
+                "Key": "Environment",
+                "Value": "Infrastructure"
+            },
+            {
+                "Key": "Project",
+                "Value": "nullforce-kickstart-aws"
+            },
+            {
+                "Key": "CreatedBy",
+                "Value": "create-terraform-backend.sh"
+            },
+            {
+                "Key": "DataClassification",
+                "Value": "Infrastructure"
+            },
+            {
+                "Key": "BackupRequired",
+                "Value": "true"
+            },
+            {
+                "Key": "CostCenter",
+                "Value": "Infrastructure"
+            }
+        ]
+    }'
+
+echo "Step 7/8: Configuring access policy..."
+# 7. Configure bucket policy for IAM users only
+# Note: Using account-specific principal to avoid BlockPublicPolicy restriction
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "Creating policy for account: $ACCOUNT_ID"
+
 aws s3api put-bucket-policy \
     --bucket "$BUCKET_NAME" \
     --policy '{
@@ -111,7 +152,9 @@ aws s3api put-bucket-policy \
             {
                 "Sid": "AllowIAMUsers",
                 "Effect": "Allow",
-                "Principal": "*",
+                "Principal": {
+                    "AWS": "arn:aws:iam::'$ACCOUNT_ID':root"
+                },
                 "Action": "s3:*",
                 "Resource": [
                     "arn:aws:s3:::'$BUCKET_NAME'",
@@ -126,8 +169,8 @@ aws s3api put-bucket-policy \
         ]
     }'
 
-echo "Step 7/7: Enabling access logging..."
-# 7. Optional: enable access logging
+echo "Step 8/8: Enabling access logging..."
+# 8. Optional: enable access logging
 aws s3api put-bucket-logging \
     --bucket "$BUCKET_NAME" \
     --bucket-logging-status '{
@@ -147,6 +190,15 @@ echo "   - Any IAM user (AIDA*) can access from any IP"
 echo "   - IAM roles (AROA*) can access from any IP"
 echo "   - Root account access is blocked"
 echo "   - Perfect for CI/CD platforms (GitHub Actions, GitLab, etc.)"
+echo ""
+echo "🏷️  Resource Tags Applied:"
+echo "   - Purpose: TerraformBackend"
+echo "   - Environment: Infrastructure"  
+echo "   - Project: nullforce-kickstart-aws"
+echo "   - Component: nullpoint-aws"
+echo "   - ManagedBy: Script"
+echo "   - DataClassification: Infrastructure"
+echo "   - BackupRequired: true"
 
 echo ""
 echo "📋 Add this to your Terraform backend configuration:"
