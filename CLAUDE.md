@@ -48,7 +48,8 @@ terraform init \
 act -j terraform \
   --env AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id)" \
   --env AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key)" \
-  --env AWS_DEFAULT_REGION="$(aws configure get region || echo eu-central-1)"
+  --env AWS_DEFAULT_REGION="$(aws configure get region || echo eu-central-1)" \
+  --env TERRAFORM_STATE_BUCKET="your-terraform-state-bucket"
 ```
 
 ### Configuration Management
