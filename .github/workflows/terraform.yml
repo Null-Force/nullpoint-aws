@@ -74,7 +74,7 @@ jobs:
       - name: Terraform init
         env:
           BACKEND_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET || env.TERRAFORM_STATE_BUCKET }}
-          BACKEND_REGION: ${{ vars.AWS_DEFAULT_REGION || env.AWS_DEFAULT_REGION }}
+          BACKEND_REGION: ${{ vars.BACKEND_REGION || env.BACKEND_REGION }}
           TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION || env.AWS_DEFAULT_REGION }}
         run: |
           echo "=== Terraform Initialization ==="
@@ -85,3 +85,19 @@ jobs:
             -backend-config="bucket=${BACKEND_BUCKET}" \
             -backend-config="key=tfstate/nullpoint-aws/${TF_VAR_aws_region}/nullpoint-aws.tfstate" \
             -backend-config="region=${BACKEND_REGION}"
+
+      - name: Terraform plan
+        env:
+          TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION || env.AWS_DEFAULT_REGION }}
+        run: |
+          echo "=== Terraform Plan ==="
+          echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
+          terraform plan
+
+      - name: Terraform apply
+        env:
+          TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION || env.AWS_DEFAULT_REGION }}
+        run: |
+          echo "=== Terraform Apply ==="
+          echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
+          terraform apply -auto-approve
