@@ -1,8 +1,8 @@
-name: Terraform plan
+name: Terraform Plan - ${{ github.ref_name }}
 
 on:
   push:
-    branches: [ main ]
+    # Runs on all branches
   pull_request:
     branches: [ main ]
 

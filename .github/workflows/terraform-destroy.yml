@@ -1,4 +1,4 @@
-name: Terraform destroy
+name: Terraform Destroy - Manual Cleanup
 
 on:
   workflow_dispatch:
