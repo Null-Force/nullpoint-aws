@@ -46,18 +46,23 @@ terraform init \
 ```bash
 # Test GitHub Actions pipeline locally with act
 act -j terraform \
-  --env AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id)" \
-  --env AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key)" \
-  --env AWS_DEFAULT_REGION="$(aws configure get region || echo eu-central-1)" \
-  --env TERRAFORM_STATE_BUCKET="your-terraform-state-bucket"
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
 ```
 
 ### Configuration Management
 ```bash
-# Copy and customize variables
+# Copy and customize Terraform variables
 cp terraform.tfvars.example terraform.tfvars
 
-# Edit terraform.tfvars to set AWS region (default: eu-central-1)
+# Copy and customize environment files for local testing
+cp environments.secrets.example ../environments/main.secrets
+cp environments.variables.example ../environments/main.variables
+
+# Edit the files with your actual values:
+# ../environments/main.secrets - AWS credentials
+# ../environments/main.variables - configuration settings
+# terraform.tfvars - Terraform-specific variables
 ```
 
 ## Architecture Overview

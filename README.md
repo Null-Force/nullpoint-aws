@@ -8,24 +8,33 @@ You can test the GitHub Actions pipeline locally using [act](https://github.com/
 
 ### Prerequisites
 - [act](https://github.com/nektos/act) installed
-- AWS CLI configured with valid credentials
 - Docker running
+- Environment files configured (see setup below)
+
+### Setup Environment Files
+```bash
+# Copy example files
+cp environments.secrets.example ../environments/main.secrets
+cp environments.variables.example ../environments/main.variables
+
+# Edit with your actual values
+# ../environments/main.secrets - your AWS credentials
+# ../environments/main.variables - your configuration
+```
 
 ### Run Pipeline Locally
 
 ```bash
 act -j terraform \
-  --env AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id)" \
-  --env AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key)" \
-  --env AWS_DEFAULT_REGION="$(aws configure get region || echo eu-central-1)" \
-  --env TERRAFORM_STATE_BUCKET="your-terraform-state-bucket"
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
 ```
 
 This command:
 - Runs the `terraform` job from `.github/workflows/terraform.yml`
-- Automatically extracts AWS credentials from your local AWS CLI configuration
-- Uses your configured AWS region, or defaults to `eu-central-1`
-- Tests AWS CLI authentication and basic AWS operations
+- Loads secrets from `../environments/main.secrets` (AWS credentials)
+- Loads variables from `../environments/main.variables` (configuration)
+- Tests the complete Terraform workflow: init, plan, apply
 
 The same pipeline file works identically in both local testing and GitHub Actions.
 

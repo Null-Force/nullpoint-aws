@@ -1,0 +1,11 @@
+# Example variables file for local development with act
+# Copy this file to ../environments/main.variables and customize values
+#
+# These correspond to GitHub repository variables in production
+
+# AWS region for all resources (corresponds to terraform.tfvars)
+AWS_DEFAULT_REGION=eu-central-1
+
+# S3 backend configuration
+TERRAFORM_STATE_BUCKET=your-terraform-state-bucket-name
+BACKEND_REGION=eu-central-1
