@@ -1,4 +1,4 @@
-name: Terraform Plan - ${{ github.ref_name }}
+name: Terraform Plan
 
 on:
   push:
