@@ -44,8 +44,20 @@ terraform init \
 
 ### Local CI/CD Testing
 ```bash
-# Test GitHub Actions pipeline locally with act
-act -j terraform \
+# Test different workflows locally with act
+
+# Plan workflow - validate and preview changes (safe)
+act -j terraform-plan \
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
+
+# Apply workflow - deploy infrastructure (makes real changes)
+act -j terraform-apply \
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
+
+# Destroy workflow - remove infrastructure (destructive)
+act -j terraform-destroy \
   --secret-file "../environments/main.secrets" \
   --var-file "../environments/main.variables"
 ```

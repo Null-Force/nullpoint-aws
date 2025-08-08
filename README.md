@@ -24,17 +24,29 @@ cp environments.variables.example ../environments/main.variables
 
 ### Run Pipeline Locally
 
+Choose the appropriate command based on what you want to test:
+
 ```bash
-act -j terraform \
+# Plan - validate and preview changes (safe, no modifications)
+act -j terraform-plan \
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
+
+# Apply - actually deploy infrastructure (makes real changes!)
+act -j terraform-apply \
+  --secret-file "../environments/main.secrets" \
+  --var-file "../environments/main.variables"
+
+# Destroy - remove all infrastructure (destructive!)
+act -j terraform-destroy \
   --secret-file "../environments/main.secrets" \
   --var-file "../environments/main.variables"
 ```
 
-This command:
-- Runs the `terraform` job from `.github/workflows/terraform.yml`
-- Loads secrets from `../environments/main.secrets` (AWS credentials)
-- Loads variables from `../environments/main.variables` (configuration)
-- Tests the complete Terraform workflow: init, plan, apply
+**Workflow explanation:**
+- **Plan**: Validates configuration and shows what will change (safe)
+- **Apply**: Actually creates/modifies AWS resources (use carefully)  
+- **Destroy**: Removes all managed infrastructure (destructive)
 
 The same pipeline file works identically in both local testing and GitHub Actions.
 

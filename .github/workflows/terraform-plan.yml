@@ -1,4 +1,4 @@
-name: Terraform
+name: Terraform plan
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  terraform:
+  terraform-plan:
     runs-on: ubuntu-latest
     environment: main
     env:
@@ -93,11 +93,3 @@ jobs:
           echo "=== Terraform Plan ==="
           echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
           terraform plan
-
-      - name: Terraform apply
-        env:
-          TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION }}
-        run: |
-          echo "=== Terraform Apply ==="
-          echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
-          terraform apply -auto-approve
