@@ -26,7 +26,7 @@ terraform destroy
 # Backend initialization (after running bootstrap scripts)
 terraform init \
   -backend-config="bucket=your-terraform-state-bucket" \
-  -backend-config="key=terraform.tfstate" \
+  -backend-config="key=tfstate/nullpoint-aws/eu-central-1/nullpoint-aws.tfstate" \
   -backend-config="region=eu-central-1"
 ```
 
@@ -107,19 +107,27 @@ The repository solves the "chicken and egg" problem of Terraform state storage t
 
 ### File Structure
 ```
-├── main.tf              # Test S3 bucket resource
-├── variables.tf         # Input variables (aws_region)
-├── outputs.tf           # Output values (currently empty)
-├── providers.tf         # AWS provider with S3 backend config
-├── versions.tf          # Version constraints
-├── locals.tf            # Local values (currently empty)
-├── data.tf              # Data sources (currently empty)
-├── scripts/             # Bootstrap automation scripts
+├── main.tf                    # Test S3 bucket resource
+├── variables.tf               # Input variables (aws_region)
+├── outputs.tf                 # Output values (currently empty)
+├── providers.tf               # AWS provider with S3 backend config
+├── versions.tf                # Version constraints
+├── locals.tf                  # Local values (currently empty)
+├── data.tf                    # Data sources (currently empty)
+├── aws-ct-lz-maniferst.json   # Control Tower Landing Zone manifest schema
+├── scripts/                   # Bootstrap automation scripts
 │   ├── create-admin-iam-user.sh
 │   ├── create-terraform-backend.sh
 │   └── manage-admin-iam-access.sh
-├── environments/        # Environment-specific configs (empty)
-└── modules/             # Reusable modules (empty)
+├── examples/                  # Configuration templates and examples
+│   ├── terraform.tfvars.example
+│   ├── environments.secrets.example
+│   ├── environments.variables.example
+│   └── landing-zone-schema.example.json
+└── .github/workflows/         # CI/CD automation
+    ├── terraform-plan.yml
+    ├── terraform-apply.yml
+    └── terraform-destroy.yml
 ```
 
 ## Key Configuration Details
@@ -139,9 +147,15 @@ Provider includes automatic resource tagging in `providers.tf:10-16`:
 - ManagedBy: "Terraform"
 
 ### CI/CD Pipeline
-GitHub Actions workflow (`.github/workflows/terraform.yml`) provides:
-- AWS CLI and Terraform installation
+GitHub Actions provides three separate workflows for different operations:
+- **terraform-plan.yml**: Runs on push/PR, validates and previews changes
+- **terraform-apply.yml**: Manual deployment workflow (workflow_dispatch)
+- **terraform-destroy.yml**: Manual cleanup workflow (workflow_dispatch)
+
+All workflows include:
+- AWS CLI and Terraform installation (≥ 1.12.0)
 - Credential validation with `aws sts get-caller-identity`
+- Backend configuration with environment variables
 - Compatible with local testing via `act`
 
 ## Development Workflow
