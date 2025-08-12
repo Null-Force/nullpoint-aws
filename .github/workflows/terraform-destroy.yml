@@ -8,9 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: main
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      # AWS credentials
+      AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION    : ${{ vars.aws_region }}
+      
+      # Variables for Terraform
+      TF_VAR_aws_region        : ${{ vars.aws_region }}
+      TF_VAR_email_log_archive : ${{ vars.email_log_archive }}
+      TF_VAR_email_audit       : ${{ vars.email_audit }}
     
     steps:
       - name: Checkout
@@ -43,10 +49,6 @@ jobs:
           fi
 
       - name: Configure AWS credentials
-        env:      
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         run: |
           echo "AWS credentials configured"
           # Validate that AWS credentials are set
@@ -68,25 +70,15 @@ jobs:
           echo "=== AWS Identity ==="
           aws sts get-caller-identity
 
-      - name: Terraform init
-        env:
-          BACKEND_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET }}
-          BACKEND_REGION: ${{ vars.BACKEND_REGION }}
-          TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION }}
+      - name: Terraform init        
         run: |
-          echo "=== Terraform Initialization ==="
-          echo "BACKEND_BUCKET: ${BACKEND_BUCKET}"
-          echo "BACKEND_REGION: ${BACKEND_REGION}"  
-          echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
+          echo "=== Terraform Initialization ==="          
           terraform init \
-            -backend-config="bucket=${BACKEND_BUCKET}" \
-            -backend-config="key=tfstate/nullpoint-aws/${TF_VAR_aws_region}/nullpoint-aws.tfstate" \
-            -backend-config="region=${BACKEND_REGION}"
+            -backend-config="bucket=${{ vars.terraform_state_bucket }}" \
+            -backend-config="key=tfstate/nullpoint-aws/${{ vars.aws_region }}/nullpoint-aws.tfstate" \
+            -backend-config="region=${{ vars.backend_region }}"
 
       - name: Terraform destroy
-        env:
-          TF_VAR_aws_region: ${{ vars.AWS_DEFAULT_REGION }}
         run: |
           echo "=== Terraform Destroy ==="
-          echo "TF_VAR_aws_region: ${TF_VAR_aws_region}"
           terraform destroy -auto-approve

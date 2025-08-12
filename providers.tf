@@ -4,9 +4,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project            = "nullforce-kickstart-aws"
-      Component          = "nullpoint-aws"
-      ManagedBy          = "Terraform"
+      Project   = "nullforce-kickstart-aws"
+      Component = "nullpoint-aws"
+      ManagedBy = "Terraform"
     }
   }
 }
