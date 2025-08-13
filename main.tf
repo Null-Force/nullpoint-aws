@@ -1,7 +1,14 @@
 # Main Terraform configuration
 
 ## Enable an AWS Organization configuration
-resource "aws_organizations_organization" "org" { feature_set = "ALL" }
+resource "aws_organizations_organization" "org" {
+  feature_set = "ALL"
+  lifecycle {
+    ignore_changes = [
+      roots
+    ]
+  }
+}
 
 
 ## Create accounts within the AWS Organization
@@ -166,8 +173,8 @@ locals {
     centralizedLogging = {
       accountId = aws_organizations_account.log.id
       configurations = {
-        loggingBucket       = { retentionDays = 90 }
-        accessLoggingBucket = { retentionDays = 90 }
+        loggingBucket       = { retentionDays = "90" }
+        accessLoggingBucket = { retentionDays = "90" }
       }
       enabled = true
     }
