@@ -11,12 +11,12 @@ jobs:
       # AWS credentials
       AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION    : ${{ vars.aws_region }}
+      AWS_DEFAULT_REGION    : ${{ vars.AWS_REGION }}
       
       # Variables for Terraform
-      TF_VAR_aws_region        : ${{ vars.aws_region }}
-      TF_VAR_email_log_archive : ${{ vars.email_log_archive }}
-      TF_VAR_email_audit       : ${{ vars.email_audit }}
+      TF_VAR_aws_region        : ${{ vars.AWS_REGION }}
+      TF_VAR_email_log_archive : ${{ vars.EMAIL_LOG_ARCHIVE }}
+      TF_VAR_email_audit       : ${{ vars.EMAIL_AUDIT }}
     
     steps:
       - name: Checkout
@@ -74,9 +74,9 @@ jobs:
         run: |
           echo "=== Terraform Initialization ==="          
           terraform init \
-            -backend-config="bucket=${{ vars.terraform_state_bucket }}" \
-            -backend-config="key=tfstate/nullpoint-aws/${{ vars.aws_region }}/nullpoint-aws.tfstate" \
-            -backend-config="region=${{ vars.backend_region }}"
+            -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" \
+            -backend-config="key=tfstate/nullpoint-aws/${{ vars.AWS_REGION }}/nullpoint-aws.tfstate" \
+            -backend-config="region=${{ vars.BACKEND_REGION }}"
 
       - name: Terraform destroy
         run: |
