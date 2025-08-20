@@ -3,27 +3,45 @@
 ## Enable an AWS Organization configuration
 resource "aws_organizations_organization" "org" {
   feature_set = "ALL"
-  lifecycle {
-    ignore_changes = [
-      roots
-    ]
-  }
+
+  aws_service_access_principals = ["cloudtrail.amazonaws.com", "controltower.amazonaws.com", "sso.amazonaws.com", "account.amazonaws.com"]
+  enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
+
+  # lifecycle {
+  #   ignore_changes = [
+  #     roots,                         # Ignore changes to roots to prevent drift issues
+  #     aws_service_access_principals, # Ignore changes to service access principals to prevent drift issues
+  #     enabled_policy_types           # Ignore changes to enabled policy types to prevent drift issues
+  #   ]
+  # }
 }
 
 
 ## Create accounts within the AWS Organization
 resource "aws_organizations_account" "log" {
-  name      = "LogArchive"
-  email     = var.email_log_archive
-  role_name = "OrganizationAccountAccessRole"
-  parent_id = aws_organizations_organization.org.roots[0].id
+  name              = "LogArchive"
+  email             = var.email_log_archive
+  role_name         = "OrganizationAccountAccessRole"
+  close_on_deletion = true
+
+  lifecycle {
+    ignore_changes = [
+      parent_id # Ignore changes to parent_id to prevent drift issues
+    ]
+  }
 }
 
 resource "aws_organizations_account" "audit" {
-  name      = "Audit"
-  email     = var.email_audit
-  role_name = "OrganizationAccountAccessRole"
-  parent_id = aws_organizations_organization.org.roots[0].id
+  name              = "Audit"
+  email             = var.email_audit
+  role_name         = "OrganizationAccountAccessRole"
+  close_on_deletion = true
+
+  lifecycle {
+    ignore_changes = [
+      parent_id # Ignore changes to parent_id to prevent drift issues
+    ]
+  }
 }
 
 
@@ -38,131 +56,21 @@ variable "email_audit" {
   type        = string
 }
 
-# Create IAM roles for AWS Control Tower
-data "aws_iam_policy_document" "ct_admin" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["controltower.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ct_admin" {
-  name               = "AWSControlTowerAdmin"
-  path               = "/service-role/"
-  assume_role_policy = data.aws_iam_policy_document.ct_admin.json
-}
-
-resource "aws_iam_role_policy_attachment" "ct_admin" {
-  role       = aws_iam_role.ct_admin.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSControlTowerServiceRolePolicy"
-}
-
-
-# Create IAM roles for AWS Control Tower CloudTrail
-data "aws_iam_policy_document" "ct_cloudtrail" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudtrail.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ct_cloudtrail" {
-  name               = "AWSControlTowerCloudTrailRole"
-  path               = "/service-role/"
-  assume_role_policy = data.aws_iam_policy_document.ct_cloudtrail.json
-}
-
-resource "aws_iam_role_policy" "ct_cloudtrail" {
-  name = "AWSControlTowerCloudTrailRolePolicy"
-  role = aws_iam_role.ct_cloudtrail.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ],
-        Resource = "arn:aws:logs:*:*:log-group:aws-controltower/CloudTrailLogs:*"
-      }
-    ]
-  })
-}
-
-
-# Create IAM roles for AWS Control Tower StackSet
-data "aws_iam_policy_document" "ct_stackset" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudformation.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ct_stackset" {
-  name               = "AWSControlTowerStackSetRole"
-  path               = "/service-role/"
-  assume_role_policy = data.aws_iam_policy_document.ct_stackset.json
-}
-
-resource "aws_iam_role_policy" "ct_stackset" {
-  name = "AWSControlTowerStackSetRolePolicy"
-  role = aws_iam_role.ct_stackset.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["sts:AssumeRole"]
-        Resource = ["arn:aws:iam::*:role/AWSControlTowerExecution"]
-      }
-    ]
-  })
-}
-
-
-# Create IAM roles for AWS Control Tower Config
-data "aws_iam_policy_document" "ct_config_org" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["config.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ct_config_org" {
-  name               = "AWSControlTowerConfigAggregatorRoleForOrganizations"
-  path               = "/service-role/"
-  assume_role_policy = data.aws_iam_policy_document.ct_config_org.json
-}
-
-resource "aws_iam_role_policy_attachment" "ct_config_org" {
-  role       = aws_iam_role.ct_config_org.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRoleForOrganizations"
-}
+# IAM roles and groups are defined in separate files:
+# - iam-ct-admin.tf - AWSControlTowerAdmin role
+# - iam-ct-cloudtrail.tf - AWSControlTowerCloudTrailRole role  
+# - iam-ct-stackset.tf - AWSControlTowerStackSetRole role
+# - iam-ct-config.tf - AWSControlTowerConfigAggregatorRoleForOrganizations role
+# - iam-ct-execution.tf - AWSControlTowerExecution role
+# - iam-ct-administrator.tf - ControlTowerAdministrator role (human access with MFA)
+# - iam-billing-admin.tf - AWSControlTowerBillingAdmin role  
+# - iam-billing-reader.tf - AWSControlTowerBillingReader role
+# - sso-billing-permission-sets.tf - Identity Center Permission Sets and groups for billing access
 
 
 # Manifes configurations
 locals {
-  governed_regions = ["eu-central-1"]
+  governed_regions = ["eu-west-1", "eu-central-1", "il-central-1", "eu-west-2"]
 
   lz_manifest = {
     governedRegions = local.governed_regions
@@ -194,3 +102,5 @@ resource "aws_controltower_landing_zone" "lz" {
     delete = "90m"
   }
 }
+
+

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Status
 
-**⚠️ DEVELOPMENT IN PROGRESS**: This repository currently contains a basic Terraform setup with a test S3 bucket implementation. The full AWS Control Tower Landing Zone infrastructure is planned but not yet implemented.
+**✅ AWS Control Tower Landing Zone**: Complete infrastructure implementation with Organizations, accounts, IAM roles, and Landing Zone deployment.
 
 ## Essential Development Commands
 
@@ -80,9 +80,12 @@ cp environments.variables.example ../environments/main.variables
 ## Architecture Overview
 
 ### Current Implementation
-The repository currently implements a minimal Terraform setup for testing AWS connectivity:
+Complete AWS Control Tower Landing Zone infrastructure with:
 
-- **Test S3 Bucket**: Simple bucket with random suffix in `main.tf:3-8`
+- **Organizations**: AWS Organizations with ALL feature set enabled in `main.tf:4-13`
+- **Accounts**: Audit and Log Archive accounts creation in `main.tf:17-41`
+- **Landing Zone**: Full Control Tower deployment with manifest in `main.tf:87-99`
+- **IAM Roles**: 8 specialized roles in separate files for different access levels
 - **S3 Backend**: Configured but requires manual initialization via bootstrap scripts
 - **AWS Provider**: Standard configuration with default tagging in `providers.tf:7-16`
 - **Version Constraints**: Terraform >= 1.6.0, AWS provider ~> 6.0 in `versions.tf`
@@ -107,14 +110,23 @@ The repository solves the "chicken and egg" problem of Terraform state storage t
 
 ### File Structure
 ```
-├── main.tf                    # Test S3 bucket resource
-├── variables.tf               # Input variables (aws_region)
+├── main.tf                    # Core infrastructure (Organizations, accounts, Landing Zone)
+├── variables.tf               # Input variables (aws_region, emails)
 ├── outputs.tf                 # Output values (currently empty)
 ├── providers.tf               # AWS provider with S3 backend config
 ├── versions.tf                # Version constraints
 ├── locals.tf                  # Local values (currently empty)
-├── data.tf                    # Data sources (currently empty)
+├── data.tf                    # Data sources (caller identity, region)
 ├── aws-ct-lz-maniferst.json   # Control Tower Landing Zone manifest schema
+├── iam-ct-admin.tf           # AWSControlTowerAdmin role
+├── iam-ct-cloudtrail.tf      # AWSControlTowerCloudTrailRole role
+├── iam-ct-stackset.tf        # AWSControlTowerStackSetRole role
+├── iam-ct-config.tf          # AWSControlTowerConfigAggregatorRoleForOrganizations role
+├── iam-ct-execution.tf       # AWSControlTowerExecution role (critical for cross-account)
+├── iam-ct-administrator.tf   # ControlTowerAdministrator role (human access with MFA)
+├── iam-billing-admin.tf      # AWSControlTowerBillingAdmin role
+├── iam-billing-reader.tf     # AWSControlTowerBillingReader role
+├── sso-billing-permission-sets.tf # Identity Center Permission Sets and groups for billing access
 ├── scripts/                   # Bootstrap automation scripts
 │   ├── create-admin-iam-user.sh
 │   ├── create-terraform-backend.sh

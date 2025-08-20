@@ -1,6 +1,8 @@
 # nullpoint-aws
 
-The initial phase of the complex modular deployment involves preparing an AWS account for ongoing deployments.
+> **The foundation layer of nullforce-kickstart-aws** - AWS Control Tower Landing Zone infrastructure with graduated access control and complete automation.
+
+The initial phase of the complex modular deployment involves preparing an AWS account for Control Tower Landing Zone and ongoing deployments.
 
 ## Local Testing with act
 
@@ -49,6 +51,76 @@ act -j terraform-destroy \
 - **Destroy**: Removes all managed infrastructure (destructive)
 
 The same pipeline file works identically in both local testing and GitHub Actions.
+
+## AWS Control Tower Landing Zone
+
+This infrastructure deploys a complete AWS Control Tower Landing Zone using programmatic API deployment with all required IAM roles and graduated access control.
+
+### Architecture Overview
+
+The deployment creates:
+- **AWS Organizations** with ALL feature set enabled
+- **Audit Account** - Security monitoring and compliance
+- **Log Archive Account** - Centralized logging storage
+- **Security OU** - Organizational unit for security accounts
+- **Sandbox OU** - Organizational unit for experimentation
+- **Landing Zone** - Complete Control Tower setup with governance
+
+### IAM Roles and Access Control
+
+The infrastructure creates a comprehensive set of IAM roles for different access levels and responsibilities:
+
+#### Control Tower Service Roles
+| Role Name | Purpose | Permissions |
+|-----------|---------|-------------|
+| `AWSControlTowerAdmin` | Primary Control Tower management | Full Control Tower + Billing access |
+| `AWSControlTowerCloudTrailRole` | CloudTrail logging service | CloudWatch Logs management |
+| `AWSControlTowerStackSetRole` | CloudFormation operations | Cross-account StackSet management |
+| `AWSControlTowerConfigAggregatorRoleForOrganizations` | Config aggregation | Organization-wide Config access |
+
+#### Graduated Access Control Roles
+| Role Name | Infrastructure Access | Billing Access | Use Case |
+|-----------|---------------------|----------------|----------|
+| `AWSControlTowerAdmin` | **Full Access** | **Full Access** | DevOps team for infrastructure changes |
+| `AWSControlTowerBillingAdmin` | **Read Only** | **Full Access** | Finance team for cost management |
+| `AWSControlTowerBillingReader` | **None** | **Read Only** | Managers for cost monitoring |
+
+### Access Control Matrix
+
+```
+┌─────────────────────────┬─────────────────┬──────────────────┬─────────────────┐
+│ Role                    │ Infrastructure  │ Billing          │ Account Creation │
+├─────────────────────────┼─────────────────┼──────────────────┼─────────────────┤
+│ AWSControlTowerAdmin    │ Full Access     │ Full Access      │ ✅ Yes          │
+│ BillingAdmin           │ Read Only       │ Full Access      │ ❌ No           │
+│ BillingReader          │ None            │ Read Only        │ ❌ No           │
+└─────────────────────────┴─────────────────┴──────────────────┴─────────────────┘
+```
+
+### Governance Features
+
+- **🏛️ Organizational Structure**: Automatic Security and Sandbox OU creation
+- **📊 Centralized Logging**: 90-day retention for CloudTrail and access logs
+- **🔐 Access Management**: IAM Identity Center integration enabled
+- **🌍 Multi-Region**: Governed regions support (default: eu-central-1)
+- **🔒 Security Controls**: Service Control Policies applied automatically
+- **📋 Compliance**: AWS Config organization-wide monitoring
+
+### Deployment Process
+
+1. **Bootstrap**: Run bootstrap scripts to create admin user and S3 backend
+2. **Organization Accounts**: Terraform creates audit and log archive accounts
+3. **IAM Roles**: All Control Tower service roles created with proper trust policies
+4. **Landing Zone**: Automated deployment with custom manifest configuration
+5. **Governance**: Service Control Policies and guardrails applied automatically
+
+### Configuration
+
+The Landing Zone configuration includes:
+- **Governed Regions**: `eu-central-1` (configurable via variables)
+- **Account Structure**: Management, Audit, Log Archive accounts
+- **Logging Retention**: 90 days for both access and CloudTrail logs
+- **Access Management**: IAM Identity Center enabled for SSO
 
 ## Bootstrap Scripts
 
@@ -118,3 +190,60 @@ Solve the "chicken and egg" problem when starting with Terraform and AWS. These 
 - 🚫 **Root Account Blocking**: S3 policies prevent root access
 - 🔄 **Lifecycle Management**: Automatic cleanup of old state versions
 - ⚠️ **User Warnings**: Clear security implications at each step
+
+## Required Variables
+
+Before deploying the infrastructure, configure the following variables in your GitHub repository or environment:
+
+### GitHub Repository Variables
+Configure these in `Settings > Secrets and variables > Actions > Variables`:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `AWS_REGION` | Primary AWS region for deployment | `eu-central-1` |
+| `EMAIL_LOG_ARCHIVE` | Email for Log Archive account creation | `yourorg+log@example.com` |
+| `EMAIL_AUDIT` | Email for Audit account creation | `yourorg+audit@example.com` |
+| `TERRAFORM_STATE_BUCKET` | S3 bucket for Terraform state | `your-terraform-state-bucket` |
+| `BACKEND_REGION` | AWS region for Terraform backend | `eu-central-1` |
+
+### GitHub Repository Secrets
+Configure these in `Settings > Secrets and variables > Actions > Secrets`:
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWS access key for deployment |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for deployment |
+
+### Terraform Variables
+When running locally, create `terraform.tfvars`:
+
+```hcl
+aws_region        = "eu-central-1"
+email_log_archive = "yourorg+log@example.com"
+email_audit       = "yourorg+audit@example.com"
+```
+
+### Email Requirements
+
+- **Unique emails required**: Each account needs a unique email address
+- **Alias support**: You can use `+` aliases (e.g., `yourorg+audit@example.com`)
+- **Access**: These emails become the root user for each account
+- **3 total emails needed**: management (existing), audit (new), log archive (new)
+
+## Deployment Steps
+
+1. **Bootstrap Environment**:
+   ```bash
+   ./scripts/create-admin-iam-user.sh
+   ./scripts/create-terraform-backend.sh
+   ```
+
+2. **Configure Variables**: Set up GitHub repository variables and secrets
+
+3. **Deploy Infrastructure**:
+   - Via GitHub Actions: Use workflow dispatch for `terraform-apply`
+   - Via Local: `terraform plan && terraform apply`
+
+4. **Verify Deployment**: Check AWS Control Tower console for Landing Zone status
+
+The deployment typically takes 60-90 minutes to complete due to Control Tower Landing Zone setup time.
