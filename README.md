@@ -73,12 +73,12 @@ The infrastructure creates a comprehensive set of IAM roles for different access
 #### Control Tower Service Roles
 ┌───────────────────────────────────────────────────────┬──────────────────────────────────┬─────────────────────────────────────┐
 | Role Name                                             | Purpose                          | Permissions                         |
-┌───────────────────────────────────────────────────────┬──────────────────────────────────┬─────────────────────────────────────┐
+├───────────────────────────────────────────────────────┼──────────────────────────────────┼─────────────────────────────────────┤
 | `AWSControlTowerAdmin`                                | Primary Control Tower management | Full Control Tower + Billing access |
 | `AWSControlTowerCloudTrailRole`                       | CloudTrail logging service       | CloudWatch Logs management          |
 | `AWSControlTowerStackSetRole`                         | CloudFormation operations        | Cross-account StackSet management   |
 | `AWSControlTowerConfigAggregatorRoleForOrganizations` | Config aggregation               | Organization-wide Config access     |
-└───────────────────────────────────────────────────────┴──────────────────────────────────┴─────────────────────────────────────┴
+└───────────────────────────────────────────────────────┴──────────────────────────────────┴─────────────────────────────────────┘
 
 #### Graduated Access Control Roles
 | Role Name                      | Infrastructure Access | Billing Access  | Use Case                               |
